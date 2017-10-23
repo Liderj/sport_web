@@ -34,188 +34,205 @@
     </div>
 </template>
 <script>
-import {
-    XInput,
-    Group,
-    XButton,
-    Selector,
-    GroupTitle, Toast,
-
-    Cell
-} from 'vux'
+import { XInput, Group, XButton, Selector, GroupTitle, Toast, Cell } from "vux";
 export default {
-    components: {
-        XInput,
-        XButton,
-        Group, GroupTitle,
-        Selector, Toast,
-        Cell
+  components: {
+    XInput,
+    XButton,
+    Group,
+    GroupTitle,
+    Selector,
+    Toast,
+    Cell
+  },
+  data() {
+    return {
+      order: {
+        name: "",
+        mobile: "",
+        age: "20",
+        gender: "男",
+        remark: ""
+      },
+      details: {
+        price: 0,
+        images: [
+          {
+            id: "",
+            url: ""
+          }
+        ]
+      }
+    };
+  },
+  mounted() {
+    this.getDetails();
+  },
+  methods: {
+    getDetails() {
+      var self = this;
+      axios
+        .get("/api/trains/" + this.$route.params.id + "/detail")
+        .then(function(response) {
+          self.details = response.data;
+        })
+        .catch(function(err) {
+          self.$vux.toast.text("网络错误", "top");
+        });
     },
-    data() {
-        return {
-            order: {
-                name: '',
-                mobile: '',
-                age: '20',
-                gender: '男',
-                remark: ''
-            },
-            details: {
-                price: 0,
-                images: [
-                    {
-                        id: '',
-                        url: '',
-                    }
-                ]
-            }
-        }
-
-    },
-    mounted() {
-        this.getDetails();
-    },
-    methods: {
-        getDetails() {
-            var self = this;
-            axios.get('/api/trains/' + this.$route.params.id + '/detail').then(function(response) {
-                self.details = response.data;
-
-            }).catch(function(err) {
-                self.$vux.toast.text('网络错误', 'top')
+    submit() {
+      var self = this;
+      if (this.order.name == "" || this.order.mobile == "") {
+        self.$vux.toast.text("请填写完整的信息", "bottom");
+        return false;
+      }
+      if (this.order.mobile.length != 11) {
+        self.$vux.toast.text("请输入正确的手机号码", "bottom");
+        return false;
+      }
+      window.console.log("aaa");
+      window.console.log(
+        window.isApp() && /(iPhone|iPad|iPod|iOS)/i.test(navigator.userAgent)
+      );
+      axios
+        .post("/api/trains/" + this.$route.params.id + "/join", {
+          token: localStorage.getItem("token"),
+          name: this.order.name,
+          age: this.order.age,
+          mobile: this.order.mobile,
+          gender: this.order.gender,
+          remark: this.order.remark,
+          train_price_id: this.$route.params.tid,
+          people: this.$route.params.people
+        })
+        .then(function(response) {
+          if (
+            window.isApp() &&
+            /(iPhone|iPad|iPod|iOS)/i.test(navigator.userAgent)
+          ) {
+            let obj_order = {
+              id: response.data.id, //id
+              created_at: response.data.created_at, //创建时间
+              price: response.data.amount, //实际支付价格
+              title: response.data.train.title, //培训名称
+              imgUrl: response.data.train.venue.image //场馆图片
+            };
+            console.log("obj_order");
+            window.location.href =
+              "apppay://" + encodeURI(JSON.stringify(obj_order));
+          } else {
+            self.$router.push({
+              path: "/orders/pay/" + response.data.id
             });
-
-        },
-        submit() {
-            var self = this;
-            if (this.order.name == '' || this.order.mobile == '') {
-                self.$vux.toast.text('请填写完整的信息', 'bottom')
-                return false
-            }
-            if (this.order.mobile.length != 11) {
-                self.$vux.toast.text('请输入正确的手机号码', 'bottom')
-                return false
-            }
-            axios.post('/api/trains/' + this.$route.params.id + '/join', {
-                token: localStorage.getItem('token'),
-                name: this.order.name,
-                age: this.order.age,
-                mobile: this.order.mobile,
-                gender: this.order.gender,
-                remark: this.order.remark,
-                train_price_id: this.$route.params.tid,
-                people: this.$route.params.people
-            }).then(function(response) {
-                self.$router.push({
-                    path: '/orders/pay/' + response.data.id
-                })
-            }).catch(function(error) {
-                self.$vux.toast.text(error.response.data.message, 'middle')
-            });
-        }
+          }
+        })
+        .catch(function(error) {
+          console.log(error);
+          // self.$vux.toast.text(error.response.data.message, "middle");
+        });
     }
-}
+  }
+};
 </script>
 <style>
 .enroll_desc {
-    background-color: #fff;
+  background-color: #fff;
 }
 
 .enroll_desc img {
-    width: 100%;
-    height: 145px;
+  width: 100%;
+  height: 145px;
 }
 
 .enroll_desc_name {
-    padding: 15px 10px;
-    color: #424242;
-    font-size: 14px;
+  padding: 15px 10px;
+  color: #424242;
+  font-size: 14px;
 }
 
 .enroll_desc_price {
-    color: #AEAEAE;
-    padding: 0 10px;
-    display: flex;
-    justify-content: space-between;
+  color: #aeaeae;
+  padding: 0 10px;
+  display: flex;
+  justify-content: space-between;
 }
 
 .enroll_desc_price span {
-    float: left;
-    vertical-align: middle;
-    line-height: 27px;
+  float: left;
+  vertical-align: middle;
+  line-height: 27px;
 }
 
 .enroll_desc_price span i {
-    color: #414141;
-    font-style: normal;
-    font-size: 13px;
+  color: #414141;
+  font-style: normal;
+  font-size: 13px;
 }
 
 .enroll_desc_price .number {
-    float: right;
-    color: #FA342C;
-    vertical-align: text-bottom;
+  float: right;
+  color: #fa342c;
+  vertical-align: text-bottom;
 }
 
 .enroll_desc_price .number label {
-    font-size: 17px;
+  font-size: 17px;
 }
 
 .weui-label {
-    font-size: 14px;
+  font-size: 14px;
 }
 
 .weui-label::before {
-    content: '*';
-    color: #FEC958;
-    margin-right: 5px;
-    position: absolute;
-    top: 14px;
-    left: 0px;
+  content: "*";
+  color: #fec958;
+  margin-right: 5px;
+  position: absolute;
+  top: 14px;
+  left: 0px;
 }
 
 .unmust .weui-label::before {
-    content: '' !important;
+  content: "" !important;
 }
 
 .submit_btn {
-    width: 70%;
-    margin: 0 auto;
-    background-color: transparent;
+  width: 70%;
+  margin: 0 auto;
+  background-color: transparent;
 }
 
 .submit_btn button {
-    background-color: #FEC958;
-    border-radius: 20px;
-    color: #2E2C2F;
-    border: none;
+  background-color: #fec958;
+  border-radius: 20px;
+  color: #2e2c2f;
+  border: none;
 }
 
 .submit_btn button::after {
-    border: none;
+  border: none;
 }
 
-
 .join {
-    background-color: #fff;
-    margin-top: 10px;
-    padding: 0 10px;
+  background-color: #fff;
+  margin-top: 10px;
+  padding: 0 10px;
 }
 
 .join .weui-cells {
-    width: 100%;
-    background-color: transparent !important;
+  width: 100%;
+  background-color: transparent !important;
 }
 
 .join .weui-cell {
-    padding: 10px 8px;
+  padding: 10px 8px;
 }
 
 .join .vux-selector.weui-cell_select-after {
-    padding-left: 8px;
+  padding-left: 8px;
 }
 
 .s_b .weui-cells {
-    background-color: transparent;
+  background-color: transparent;
 }
 </style>
